@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            margin-bottom: 30px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stats {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+        .upgrades {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .upgrade-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .upgrade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .upgrade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .upgrade-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .upgrade-owned {
+            background: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .upgrade-info {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .upgrade-info div {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+
+        .upgrade-cost {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .upgrade-pps {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .buy-button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .buy-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .buy-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .buy-button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 20px 30px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        .message.success {
+            background: #4CAF50;
+        }
+
+        .message.error {
+            background: #ff6b6b;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        .tier-label {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 0.7em;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+
+        .tier-1 { background: #90EE90; color: #2d5016; }
+        .tier-2 { background: #87CEEB; color: #1a4d6b; }
+        .tier-3 { background: #DDA0DD; color: #5a1f5a; }
+        .tier-4 { background: #FFD700; color: #6b5700; }
+        .tier-5 { background: #FF6347; color: #6b1f14; }
+        .tier-6 { background: #FF69B4; color: #6b0037; }
+        .tier-7 { background: #8A2BE2; color: #ffffff; }
+        .tier-8 { background: #FF4500; color: #ffffff; }
+        .tier-9 { background: #DC143C; color: #ffffff; }
+        .tier-10 { background: #000000; color: #FFD700; }
+        .tier-11 { background: #4B0082; color: #ADFF2F; }
+        .tier-12 { background: #800080; color: #00FFFF; }
+        .tier-13 { background: #8B0000; color: #FFFF00; }
+        .tier-14 { background: #2F4F4F; color: #FF1493; }
+        .tier-15 { background: #191970; color: #FFD700; }
+        .tier-16 { background: #000000; color: #00FF00; }
+        .tier-17 { background: #1C1C1C; color: #FF00FF; }
+        .tier-18 { background: linear-gradient(45deg, #000000, #FFD700, #FF1493, #00FFFF); color: #FFFFFF; font-weight: bold; }
+        .tier-19 { background: linear-gradient(45deg, #4B0082, #FF1493, #00CED1); color: #FFFFFF; font-weight: bold; }
+        .tier-20 { background: linear-gradient(90deg, #8B0000, #FFD700, #00FF00); color: #FFFFFF; font-weight: bold; }
+        .tier-21 { background: linear-gradient(135deg, #1C1C1C, #FF4500, #FFD700); color: #FFFFFF; font-weight: bold; }
+        .tier-22 { background: linear-gradient(180deg, #000080, #FF1493, #00FFFF); color: #FFFFFF; font-weight: bold; }
+        .tier-23 { background: linear-gradient(225deg, #8B008B, #FFD700, #00FF00); color: #000000; font-weight: bold; }
+        .tier-24 { background: linear-gradient(270deg, #000000, #FF0000, #FFFF00, #00FF00); color: #FFFFFF; font-weight: bold; }
+        .tier-25 { background: linear-gradient(315deg, #0000FF, #FF00FF, #FFFF00); color: #000000; font-weight: bold; }
+        .tier-26 { background: linear-gradient(360deg, #8B0000, #FFD700, #00CED1, #FF1493); color: #FFFFFF; font-weight: bold; }
+        .tier-27 { background: linear-gradient(45deg, #000000, #FF0000, #00FF00, #0000FF, #FFFF00); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 5px #000; }
+        .tier-28 { background: radial-gradient(circle, #FFD700, #FF1493, #00FFFF, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 10px #FFD700; animation: pulse 2s infinite; }
+        .tier-29 { background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 8px #000; }
+        .tier-30 { background: radial-gradient(circle, #00FFFF, #FF1493, #FFD700, #8A2BE2, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 12px #00FFFF; }
+        .tier-31 { background: linear-gradient(135deg, #000000, #8B0000, #FFD700, #00FF00, #00CED1); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 10px #FFD700; }
+        .tier-32 { background: conic-gradient(from 0deg, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 15px #000; }
+        .tier-33 { background: radial-gradient(ellipse, #FFD700, #FF4500, #8B008B, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 12px #FFD700; }
+        .tier-34 { background: linear-gradient(180deg, #000000, #DC143C, #FFD700, #00FF00, #1E90FF); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 10px #FFFFFF; }
+        .tier-35 { background: conic-gradient(from 45deg, #8B0000, #FFD700, #00FF00, #00CED1, #4B0082, #FF1493, #8B0000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 15px #FFD700; }
+        .tier-36 { background: radial-gradient(circle at 30% 30%, #FFD700, #FF1493, #00FFFF, #8A2BE2, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 15px #FFD700; }
+        .tier-37 { background: linear-gradient(225deg, #FF0000, #FF8C00, #FFD700, #00FF00, #00CED1, #0000FF, #8B008B); color: #000000; font-weight: bold; text-shadow: 0 0 5px #FFFFFF; }
+        .tier-38 { background: conic-gradient(from 90deg, #000000, #8B0000, #FFD700, #00FF00, #00FFFF, #4B0082, #FF1493, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 20px #FFD700; }
+        .tier-39 { background: radial-gradient(ellipse at 50% 50%, #FFFFFF, #FFD700, #FF1493, #00FFFF, #000000); color: #000000; font-weight: bold; text-shadow: 0 0 10px #FFFFFF; }
+        .tier-40 { background: linear-gradient(270deg, #000000, #FF0000, #FFD700, #00FF00, #00FFFF, #0000FF, #FF00FF, #FFFFFF); color: #000000; font-weight: bold; text-shadow: 0 0 15px #FFD700; }
+        .tier-41 { background: conic-gradient(from 180deg, #FFD700, #FF1493, #00FFFF, #00FF00, #8A2BE2, #FF4500, #FFD700); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 25px #FFFFFF, 0 0 50px #FFD700; animation: pulse 2s infinite; }
+        .tier-42 { background: linear-gradient(45deg, #FF00FF, #00FFFF, #FFFF00, #FF1493); color: #000000; font-weight: bold; text-shadow: 0 0 8px #FFFFFF; }
+        .tier-43 { background: radial-gradient(circle, #8A2BE2, #FFD700, #FF4500, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 15px #FFD700; }
+        .tier-44 { background: conic-gradient(from 90deg, #FF1493, #00FF00, #00FFFF, #FF00FF, #FFD700); color: #000000; font-weight: bold; text-shadow: 0 0 10px #FFFFFF; }
+        .tier-45 { background: linear-gradient(180deg, #8B0000, #FFD700, #00CED1, #8A2BE2); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 12px #FFD700; }
+        .tier-46 { background: radial-gradient(ellipse, #00FFFF, #FF1493, #FFFF00, #8A2BE2, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 18px #00FFFF; }
+        .tier-47 { background: conic-gradient(from 270deg, #FF0000, #FFD700, #00FF00, #00FFFF, #0000FF, #FF00FF); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 15px #000; }
+        .tier-48 { background: linear-gradient(135deg, #000000, #FF4500, #FFD700, #00FF00, #1E90FF, #8A2BE2); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 20px #FFD700; }
+        .tier-49 { background: radial-gradient(circle at 70% 30%, #FFD700, #FF1493, #00FFFF, #00FF00, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 15px #FFD700; }
+        .tier-50 { background: conic-gradient(from 0deg, #8B0000, #FF4500, #FFD700, #00FF00, #00FFFF, #4B0082, #FF1493, #8B0000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 25px #FFD700; }
+        .tier-51 { background: linear-gradient(90deg, #000000, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FFFFFF); color: #000000; font-weight: bold; text-shadow: 0 0 10px #FFD700; }
+        .tier-52 { background: radial-gradient(circle, #FF1493, #FFD700, #00FFFF, #8A2BE2, #FF4500); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 20px #FFFFFF; }
+        .tier-53 { background: conic-gradient(from 180deg, #FFD700, #FF1493, #00FF00, #00FFFF, #FF00FF, #FF4500); color: #000000; font-weight: bold; text-shadow: 0 0 15px #FFFFFF; }
+        .tier-54 { background: linear-gradient(270deg, #8B0000, #FFD700, #00FF00, #00FFFF, #8A2BE2, #FF1493); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 18px #FFD700; }
+        .tier-55 { background: radial-gradient(ellipse at 50% 50%, #FFFFFF, #FFD700, #FF1493, #00FFFF, #8A2BE2, #000000); color: #000000; font-weight: bold; text-shadow: 0 0 12px #FFFFFF; }
+        .tier-56 { background: conic-gradient(from 45deg, #FF0000, #FF8C00, #FFFF00, #00FF00, #00FFFF, #0000FF, #4B0082, #9400D3); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 20px #000; }
+        .tier-57 { background: linear-gradient(45deg, #000000, #8B0000, #FFD700, #00FF00, #00CED1, #4B0082, #FF1493); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 25px #FFD700; }
+        .tier-58 { background: radial-gradient(circle at 30% 70%, #FFD700, #FF1493, #00FFFF, #8A2BE2, #FF4500, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 18px #FFD700; }
+        .tier-59 { background: conic-gradient(from 135deg, #8B0000, #FFD700, #00FF00, #00FFFF, #4B0082, #FF1493, #FFFFFF); color: #000000; font-weight: bold; text-shadow: 0 0 10px #FFD700; }
+        .tier-60 { background: linear-gradient(180deg, #000000, #DC143C, #FFD700, #00FF00, #00FFFF, #1E90FF, #8A2BE2, #FF00FF); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 20px #FFFFFF; }
+        .tier-61 { background: radial-gradient(circle, #8A2BE2, #FF1493, #FFD700, #00FFFF, #00FF00, #FF4500); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 25px #FFD700; animation: pulse 2s infinite; }
+        .tier-62 { background: conic-gradient(from 270deg, #FF1493, #FFD700, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF4500); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 20px #000; }
+        .tier-63 { background: linear-gradient(225deg, #000000, #FF0000, #FFD700, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 22px #FFD700; }
+        .tier-64 { background: radial-gradient(ellipse at 60% 40%, #FFFFFF, #FFD700, #FF1493, #00FFFF, #8A2BE2, #FF4500, #000000); color: #000000; font-weight: bold; text-shadow: 0 0 15px #FFFFFF; }
+        .tier-65 { background: conic-gradient(from 0deg, #8B0000, #FF4500, #FFD700, #FFFF00, #00FF00, #00FFFF, #0000FF, #4B0082, #FF00FF); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 30px #FFD700; animation: pulse 2s infinite; }
+        .tier-66 { background: radial-gradient(circle at 50% 50%, #FFFFFF, #FFD700, #FF1493, #00FFFF, #00FF00, #FF4500, #8A2BE2, #000000); color: #FFFFFF; font-weight: bold; text-shadow: 0 0 35px #FFD700, 0 0 60px #FFFFFF; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        @keyframes rainbow {
+            0% { box-shadow: 0 5px 20px rgba(255, 0, 255, 0.7); }
+            33% { box-shadow: 0 5px 20px rgba(0, 255, 255, 0.7); }
+            66% { box-shadow: 0 5px 20px rgba(255, 215, 0, 0.7); }
+            100% { box-shadow: 0 5px 20px rgba(255, 0, 255, 0.7); }
+        }
+        
+        /* Achievement styles */
+        .achievements-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 1000;
+        }
+
+        .achievements-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.7);
+        }
+
+        .achievements-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .achievements-content {
+            background: white;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .achievements-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .achievements-title {
+            font-size: 2.5em;
+            color: #667eea;
+            margin: 0;
+        }
+
+        .close-button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .close-button:hover {
+            transform: scale(1.1);
+        }
+
+        .achievement-category {
+            margin-bottom: 30px;
+        }
+
+        .category-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .easy { background: linear-gradient(135deg, #90EE90 0%, #32CD32 100%); }
+        .medium { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+        .hard { background: linear-gradient(135deg, #FF6347 0%, #DC143C 100%); }
+        .challenging { background: linear-gradient(135deg, #9370DB 0%, #8A2BE2 100%); }
+        .extreme { background: linear-gradient(135deg, #FF1493 0%, #8B008B 100%); }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .achievement-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            border: 3px solid #ddd;
+            transition: all 0.3s;
+        }
+
+        .achievement-card.unlocked {
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe6b3 100%);
+            border-color: #FFD700;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .achievement-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            filter: grayscale(100%);
+        }
+
+        .achievement-card.unlocked .achievement-icon {
+            filter: grayscale(0%);
+        }
+
+        .achievement-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .achievement-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .achievement-progress {
+            font-size: 0.85em;
+            color: #888;
+            font-style: italic;
+        }
+
+        .achievement-card.unlocked .achievement-progress {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .achievement-stats {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .achievement-stats h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .achievement-notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.6);
+            animation: slideInAchievement 0.5s ease-out;
+            z-index: 3000;
+            max-width: 350px;
+        }
+
+        .achievement-notification h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.3em;
+        }
+
+        .achievement-notification p {
+            margin: 0;
+            font-size: 0.95em;
+        }
+
+        @keyframes slideInAchievement {
+            from {
+                transform: translateX(500px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 POINT GAME 🎮</h1>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">Current Points</div>
+                    <div class="stat-value" id="points">10.00</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Points per Second</div>
+                    <div class="stat-value" id="pps">0.00</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Ascension Multiplier</div>
+                    <div class="stat-value" id="multiplier">1x</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Boosts</div>
+                    <div class="stat-value" id="boost-count">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Ultrajumps</div>
+                    <div class="stat-value" id="ultrajump-count">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Kangaroo Leaps</div>
+                    <div class="stat-value" id="kangaroo-count">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Sky Elevators</div>
+                    <div class="stat-value" id="sky-count">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Spacejumps</div>
+                    <div class="stat-value" id="spacejump-count">0</div>
+                </div>
+            </div>
+            <div id="ultrajump-status" style="margin-top: 10px; display: none; color: #FFD700; font-weight: bold; font-size: 1.2em;">
+                ⚡ ULTRAJUMP ACTIVE - 2x Boosts Per Boost! ⚡
+            </div>
+            <div id="kangaroo-status" style="margin-top: 10px; display: none; color: #FF1493; font-weight: bold; font-size: 1.2em;">
+                🦘 KANGAROO LEAP ACTIVE - Multiple Ultrajumps Per Ultrajump! 🦘
+            </div>
+            <div id="sky-status" style="margin-top: 10px; display: none; color: #00FFFF; font-weight: bold; font-size: 1.2em;">
+                🏢 SKY ELEVATOR ACTIVE - Multiple Kangaroo Leaps Per Kangaroo Leap! 🏢
+            </div>
+            <div id="spacejump-status" style="margin-top: 10px; display: none; color: #FF00FF; font-weight: bold; font-size: 1.2em;">
+                🚀 SPACEJUMP ACTIVE - Multiple Sky Elevators Per Sky Elevator! 🚀
+            </div>
+            <div id="boost-container" style="margin-top: 20px; display: none;">
+                <button id="boost-button" onclick="performBoost()" style="
+                    background: linear-gradient(135deg, #FFD700 0%, #FF1493 100%);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    ⚡ BOOST - Double Multiplier! ⚡
+                </button>
+            </div>
+            <div id="ultrajump-container" style="margin-top: 15px; display: none;">
+                <button id="ultrajump-button" onclick="performUltrajump()" style="
+                    background: linear-gradient(135deg, #FF00FF 0%, #00FFFF 50%, #FFD700 100%);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    box-shadow: 0 5px 20px rgba(255, 0, 255, 0.7);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    animation: rainbow 3s infinite;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    🚀 ULTRAJUMP - Triple Multiplier! 🚀
+                </button>
+            </div>
+            <div id="kangaroo-container" style="margin-top: 15px; display: none;">
+                <button id="kangaroo-button" onclick="performKangarooLeap()" style="
+                    background: linear-gradient(135deg, #FF1493 0%, #FFD700 50%, #00FF00 100%);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    box-shadow: 0 5px 20px rgba(255, 20, 147, 0.7);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    animation: rainbow 3s infinite;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    🦘 KANGAROO LEAP - Quadruple Multiplier! 🦘
+                </button>
+            </div>
+            <div id="sky-container" style="margin-top: 15px; display: none;">
+                <button id="sky-button" onclick="performSkyElevator()" style="
+                    background: linear-gradient(135deg, #00FFFF 0%, #0080FF 50%, #8000FF 100%);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    box-shadow: 0 5px 20px rgba(0, 255, 255, 0.7);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    animation: rainbow 3s infinite;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    🏢 SKY ELEVATOR - Quadruple Multiplier! 🏢
+                </button>
+            </div>
+            <div id="spacejump-container" style="margin-top: 15px; display: none;">
+                <button id="spacejump-button" onclick="performSpacejump()" style="
+                    background: linear-gradient(135deg, #FF00FF 0%, #8B00FF 25%, #0000FF 50%, #00FFFF 75%, #FFFFFF 100%);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    box-shadow: 0 5px 20px rgba(255, 0, 255, 0.9);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    animation: rainbow 3s infinite;
+                    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    🚀 SPACEJUMP - Quintuple Multiplier! 🚀
+                </button>
+            </div>
+        </header>
+
+        <div class="upgrades" id="upgrades"></div>
+    </div>
+
+    <!-- Achievements Button -->
+    <button class="achievements-button" onclick="openAchievements()">
+        🏆 Achievements (<span id="achievement-count">0</span>/<span id="total-achievements">0</span>)
+    </button>
+
+    <!-- Achievements Modal -->
+    <div class="achievements-modal" id="achievements-modal">
+        <div class="achievements-content">
+            <div class="achievements-header">
+                <h2 class="achievements-title">🏆 Achievements</h2>
+                <button class="close-button" onclick="closeAchievements()">✕ Close</button>
+            </div>
+            
+            <div class="achievement-stats">
+                <h3>Progress: <span id="modal-achievement-count">0</span>/<span id="modal-total-achievements">0</span></h3>
+                <p>Completion: <span id="achievement-percentage">0</span>%</p>
+            </div>
+
+            <div id="achievements-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let points = 10.0;
+        let lastUpdate = Date.now();
+        let ascensionMultiplier = 1;
+        let boostCount = 0;
+        let ultrajumpCount = 0;
+        let kangarooLeapCount = 0;
+        let skyElevatorCount = 0;
+        let spacejumpCount = 0;
+        let totalPointsEarned = 10.0;
+        let totalUpgradesPurchased = 0;
+        let totalBoostsPerformed = 0;
+        let totalUltrajumpsPerformed = 0;
+        let unlockedAchievements = new Set();
+        
+        // Achievement definitions
+        const achievements = [
+            // EASY Achievements
+            { id: 'first_points', name: 'Getting Started', icon: '🌱', description: 'Reach 100 points', difficulty: 'easy', check: () => totalPointsEarned >= 100 },
+            { id: 'first_upgrade', name: 'First Step', icon: '🛠️', description: 'Purchase your first upgrade', difficulty: 'easy', check: () => totalUpgradesPurchased >= 1 },
+            { id: 'five_upgrades', name: 'Building Up', icon: '🏗️', description: 'Purchase 5 upgrades', difficulty: 'easy', check: () => totalUpgradesPurchased >= 5 },
+            { id: 'thousand_points', name: 'Millionaire\'s Journey', icon: '💰', description: 'Reach 1,000 points', difficulty: 'easy', check: () => totalPointsEarned >= 1000 },
+            { id: 'first_clicker', name: 'Click Master', icon: '👆', description: 'Own 10 Clickers', difficulty: 'easy', check: () => upgrades[0].owned >= 10 },
+            { id: 'first_generator', name: 'Power Up', icon: '⚡', description: 'Own 5 Generators', difficulty: 'easy', check: () => upgrades[1].owned >= 5 },
+            { id: 'ten_pps', name: 'Passive Income', icon: '📈', description: 'Reach 10 points per second', difficulty: 'easy', check: () => calculatePPS() >= 10 },
+            
+            // MEDIUM Achievements
+            { id: 'million_points', name: 'Millionaire', icon: '💎', description: 'Reach 1 Million points', difficulty: 'medium', check: () => totalPointsEarned >= 1e6 },
+            { id: 'first_boost', name: 'Ascension', icon: '🚀', description: 'Perform your first Boost', difficulty: 'medium', check: () => totalBoostsPerformed >= 1 },
+            { id: 'twenty_upgrades', name: 'Collector', icon: '📦', description: 'Purchase 20 upgrades', difficulty: 'medium', check: () => totalUpgradesPurchased >= 20 },
+            { id: 'tier_3', name: 'Quantum Leap', icon: '⚛️', description: 'Purchase a Tier 3 upgrade', difficulty: 'medium', check: () => upgrades.some(u => u.tier >= 3 && u.owned > 0) },
+            { id: 'thousand_pps', name: 'Production Line', icon: '🏭', description: 'Reach 1,000 points per second', difficulty: 'medium', check: () => calculatePPS() >= 1000 },
+            { id: 'five_boosts', name: 'Boost Addict', icon: '⚡', description: 'Perform 5 Boosts', difficulty: 'medium', check: () => totalBoostsPerformed >= 5 },
+            { id: 'multiplier_10', name: 'Power Multiplier', icon: '✨', description: 'Reach a 10x multiplier', difficulty: 'medium', check: () => ascensionMultiplier >= 10 },
+            { id: 'billion_points', name: 'Billionaire', icon: '💵', description: 'Reach 1 Billion points', difficulty: 'medium', check: () => totalPointsEarned >= 1e9 },
+            
+            // HARD Achievements
+            { id: 'trillion_points', name: 'Trillionaire', icon: '🏦', description: 'Reach 1 Trillion points', difficulty: 'hard', check: () => totalPointsEarned >= 1e12 },
+            { id: 'first_ultrajump', name: 'Ultra Power', icon: '🔥', description: 'Perform your first Ultrajump', difficulty: 'hard', check: () => totalUltrajumpsPerformed >= 1 },
+            { id: 'tier_5', name: 'Reality Bending', icon: '🌌', description: 'Purchase a Tier 5 upgrade', difficulty: 'hard', check: () => upgrades.some(u => u.tier >= 5 && u.owned > 0) },
+            { id: 'fifty_upgrades', name: 'Mega Collector', icon: '🎁', description: 'Purchase 50 upgrades', difficulty: 'hard', check: () => totalUpgradesPurchased >= 50 },
+            { id: 'million_pps', name: 'Million per Second', icon: '💫', description: 'Reach 1 Million points per second', difficulty: 'hard', check: () => calculatePPS() >= 1e6 },
+            { id: 'ten_boosts', name: 'Boost Master', icon: '🎆', description: 'Perform 10 Boosts', difficulty: 'hard', check: () => totalBoostsPerformed >= 10 },
+            { id: 'multiplier_100', name: 'Century Multiplier', icon: '💯', description: 'Reach a 100x multiplier', difficulty: 'hard', check: () => ascensionMultiplier >= 100 },
+            { id: 'quintillion_points', name: 'Quintillionaire', icon: '🌟', description: 'Reach 1 Quintillion points', difficulty: 'hard', check: () => totalPointsEarned >= 1e18 },
+            
+            // CHALLENGING Achievements
+            { id: 'tier_10', name: 'Singularity', icon: '⚫', description: 'Purchase a Tier 10 upgrade', difficulty: 'challenging', check: () => upgrades.some(u => u.tier >= 10 && u.owned > 0) },
+            { id: 'hundred_upgrades', name: 'Ultimate Collector', icon: '🏰', description: 'Purchase 100 upgrades', difficulty: 'challenging', check: () => totalUpgradesPurchased >= 100 },
+            { id: 'billion_pps', name: 'Billion per Second', icon: '🌠', description: 'Reach 1 Billion points per second', difficulty: 'challenging', check: () => calculatePPS() >= 1e9 },
+            { id: 'multiplier_1000', name: 'Millennium Power', icon: '🔱', description: 'Reach a 1,000x multiplier', difficulty: 'challenging', check: () => ascensionMultiplier >= 1000 },
+            { id: 'five_ultrajumps', name: 'Ultrajump Expert', icon: '🎯', description: 'Perform 5 Ultrajumps', difficulty: 'challenging', check: () => totalUltrajumpsPerformed >= 5 },
+            { id: 'kangaroo_leap', name: 'Kangaroo Master', icon: '🦘', description: 'Perform a Kangaroo Leap', difficulty: 'challenging', check: () => kangarooLeapCount >= 1 },
+            { id: 'octillion_points', name: 'Octillionaire', icon: '🎰', description: 'Reach 1 Octillion points', difficulty: 'challenging', check: () => totalPointsEarned >= 1e27 },
+            { id: 'tier_20', name: 'Cosmic Power', icon: '🌌', description: 'Purchase a Tier 20 upgrade', difficulty: 'challenging', check: () => upgrades.some(u => u.tier >= 20 && u.owned > 0) },
+            
+            // EXTREME Achievements
+            { id: 'tier_30', name: 'Infinite Might', icon: '♾️', description: 'Purchase a Tier 30 upgrade', difficulty: 'extreme', check: () => upgrades.some(u => u.tier >= 30 && u.owned > 0) },
+            { id: 'tier_40', name: 'Absolute Dominance', icon: '👑', description: 'Purchase a Tier 40 upgrade', difficulty: 'extreme', check: () => upgrades.some(u => u.tier >= 40 && u.owned > 0) },
+            { id: 'tier_50', name: 'Divine Ascension', icon: '🌞', description: 'Purchase a Tier 50 upgrade', difficulty: 'extreme', check: () => upgrades.some(u => u.tier >= 50 && u.owned > 0) },
+            { id: 'tier_60', name: 'Eternal Sovereign', icon: '👁️', description: 'Purchase a Tier 60 upgrade', difficulty: 'extreme', check: () => upgrades.some(u => u.tier >= 60 && u.owned > 0) },
+            { id: 'tier_66', name: 'Beyond All', icon: '🎆', description: 'Purchase the final upgrade', difficulty: 'extreme', check: () => upgrades.some(u => u.tier >= 66 && u.owned > 0) },
+            { id: 'trillion_pps', name: 'Trillion per Second', icon: '💥', description: 'Reach 1 Trillion points per second', difficulty: 'extreme', check: () => calculatePPS() >= 1e12 },
+            { id: 'multiplier_million', name: 'Million Times Power', icon: '🌋', description: 'Reach a 1 Million multiplier', difficulty: 'extreme', check: () => ascensionMultiplier >= 1e6 },
+            { id: 'fifty_boosts', name: 'Boost Deity', icon: '👼', description: 'Perform 50 Boosts', difficulty: 'extreme', check: () => totalBoostsPerformed >= 50 },
+            { id: 'twenty_ultrajumps', name: 'Ultrajump God', icon: '🔮', description: 'Perform 20 Ultrajumps', difficulty: 'extreme', check: () => totalUltrajumpsPerformed >= 20 },
+            { id: 'sky_elevator', name: 'Sky Scraper', icon: '🏢', description: 'Perform a Sky Elevator', difficulty: 'extreme', check: () => skyElevatorCount >= 1 },
+            { id: 'spacejump', name: 'Space Explorer', icon: '🛸', description: 'Perform a Spacejump', difficulty: 'extreme', check: () => spacejumpCount >= 1 },
+            { id: 'nonillion_points', name: 'Nonillionaire', icon: '🎲', description: 'Reach 1 Nonillion points', difficulty: 'extreme', check: () => totalPointsEarned >= 1e30 },
+            { id: 'googol_points', name: 'Googol Master', icon: '🌈', description: 'Reach 1 Googol points', difficulty: 'extreme', check: () => totalPointsEarned >= 1e100 },
+            { id: 'five_hundred_upgrades', name: 'Legendary Collector', icon: '🎖️', description: 'Purchase 500 upgrades', difficulty: 'extreme', check: () => totalUpgradesPurchased >= 500 },
+            { id: 'quintillion_pps', name: 'Quintillion per Second', icon: '☄️', description: 'Reach 1 Quintillion points per second', difficulty: 'extreme', check: () => calculatePPS() >= 1e18 },
+        ];
+        
+        // Upgrade definitions
+        const upgrades = [
+            { id: 1, name: "Clicker", cost: 10, pps: 0.5, owned: 0, tier: 1 },
+            { id: 2, name: "Generator", cost: 50, pps: 3, owned: 0, tier: 1 },
+            { id: 3, name: "Factory", cost: 200, pps: 15, owned: 0, tier: 2 },
+            { id: 4, name: "Mega Factory", cost: 1000, pps: 100, owned: 0, tier: 2 },
+            { id: 5, name: "Quantum Reactor", cost: 5000, pps: 600, owned: 0, tier: 3 },
+            { id: 6, name: "Antimatter Engine", cost: 25000, pps: 3500, owned: 0, tier: 3 },
+            { id: 7, name: "Black Hole Generator", cost: 100000, pps: 20000, owned: 0, tier: 4 },
+            { id: 8, name: "Universe Forge", cost: 500000, pps: 120000, owned: 0, tier: 4 },
+            { id: 9, name: "Multiverse Nexus", cost: 2500000, pps: 750000, owned: 0, tier: 5 },
+            { id: 10, name: "Reality Bender", cost: 10000000, pps: 5000000, owned: 0, tier: 5 },
+            { id: 11, name: "Dimension Splitter", cost: 50000000, pps: 30000000, owned: 0, tier: 6 },
+            { id: 12, name: "Infinity Engine", cost: 250000000, pps: 180000000, owned: 0, tier: 6 },
+            { id: 13, name: "Time Manipulator", cost: 1000000000, pps: 1000000000, owned: 0, tier: 7 },
+            { id: 14, name: "Cosmic Orchestrator", cost: 5000000000, pps: 6000000000, owned: 0, tier: 7 },
+            { id: 15, name: "Void Harvester", cost: 25000000000, pps: 35000000000, owned: 0, tier: 8 },
+            { id: 16, name: "Eternity Forge", cost: 100000000000, pps: 200000000000, owned: 0, tier: 8 },
+            { id: 17, name: "Omnipotence Core", cost: 500000000000, pps: 1200000000000, owned: 0, tier: 9 },
+            { id: 18, name: "Big Bang Machine", cost: 2500000000000, pps: 7000000000000, owned: 0, tier: 9 },
+            { id: 19, name: "Existence Engine", cost: 10000000000000, pps: 40000000000000, owned: 0, tier: 10 },
+            { id: 20, name: "The Singularity", cost: 50000000000000, pps: 250000000000000, owned: 0, tier: 10 },
+            { id: 21, name: "Probability Defier", cost: 250000000000000, pps: 1500000000000000, owned: 0, tier: 11 },
+            { id: 22, name: "Chaos Synthesizer", cost: 1000000000000000, pps: 8000000000000000, owned: 0, tier: 11 },
+            { id: 23, name: "Entropy Reverser", cost: 5000000000000000, pps: 45000000000000000, owned: 0, tier: 12 },
+            { id: 24, name: "Absolute Zero Reactor", cost: 25000000000000000, pps: 250000000000000000, owned: 0, tier: 12 },
+            { id: 25, name: "Infinite Recursion Loop", cost: 100000000000000000, pps: 1400000000000000000, owned: 0, tier: 13 },
+            { id: 26, name: "Hyperdimensional Matrix", cost: 500000000000000000, pps: 8000000000000000000, owned: 0, tier: 13 },
+            { id: 27, name: "Paradox Generator", cost: 2500000000000000000, pps: 45000000000000000000, owned: 0, tier: 14 },
+            { id: 28, name: "Meta-Universe Engine", cost: 10000000000000000000, pps: 250000000000000000000, owned: 0, tier: 14 },
+            { id: 29, name: "Transcendence Core", cost: 50000000000000000000, pps: 1400000000000000000000, owned: 0, tier: 15 },
+            { id: 30, name: "Omega Point", cost: 250000000000000000000, pps: 8000000000000000000000, owned: 0, tier: 15 },
+            { id: 31, name: "Divine Spark", cost: 1000000000000000000000, pps: 45000000000000000000000, owned: 0, tier: 16 },
+            { id: 32, name: "Akashic Records", cost: 5000000000000000000000, pps: 250000000000000000000000, owned: 0, tier: 16 },
+            { id: 33, name: "Prime Mover", cost: 25000000000000000000000, pps: 1400000000000000000000000, owned: 0, tier: 17 },
+            { id: 34, name: "Ultimate Answer", cost: 100000000000000000000000, pps: 8000000000000000000000000, owned: 0, tier: 17 },
+            { id: 35, name: "The Absolute", cost: 500000000000000000000000, pps: 50000000000000000000000000, owned: 0, tier: 18 },
+            { id: 36, name: "Nexus of All Things", cost: 2500000000000000000000000, pps: 300000000000000000000000000, owned: 0, tier: 19 },
+            { id: 37, name: "Eternal Recurrence", cost: 10000000000000000000000000, pps: 1700000000000000000000000000, owned: 0, tier: 19 },
+            { id: 38, name: "Cosmic Consciousness", cost: 50000000000000000000000000, pps: 10000000000000000000000000000, owned: 0, tier: 20 },
+            { id: 39, name: "Universal Mind", cost: 250000000000000000000000000, pps: 60000000000000000000000000000, owned: 0, tier: 20 },
+            { id: 40, name: "Infinite Potential", cost: 1000000000000000000000000000, pps: 350000000000000000000000000000, owned: 0, tier: 21 },
+            { id: 41, name: "Quantum Superposition", cost: 5000000000000000000000000000, pps: 2000000000000000000000000000000, owned: 0, tier: 21 },
+            { id: 42, name: "Multiversal Harmony", cost: 25000000000000000000000000000, pps: 12000000000000000000000000000000, owned: 0, tier: 22 },
+            { id: 43, name: "Source Code", cost: 100000000000000000000000000000, pps: 70000000000000000000000000000000, owned: 0, tier: 22 },
+            { id: 44, name: "Alpha and Omega", cost: 500000000000000000000000000000, pps: 400000000000000000000000000000000, owned: 0, tier: 23 },
+            { id: 45, name: "Universal Constant", cost: 2500000000000000000000000000000, pps: 2400000000000000000000000000000000, owned: 0, tier: 23 },
+            { id: 46, name: "Fundamental Force", cost: 10000000000000000000000000000000, pps: 14000000000000000000000000000000000, owned: 0, tier: 24 },
+            { id: 47, name: "Primordial Essence", cost: 50000000000000000000000000000000, pps: 85000000000000000000000000000000000, owned: 0, tier: 24 },
+            { id: 48, name: "Infinite Jest", cost: 250000000000000000000000000000000, pps: 500000000000000000000000000000000000, owned: 0, tier: 25 },
+            { id: 49, name: "Beyond Comprehension", cost: 1000000000000000000000000000000000, pps: 3000000000000000000000000000000000000, owned: 0, tier: 25 },
+            { id: 50, name: "The Unknowable", cost: 5000000000000000000000000000000000, pps: 18000000000000000000000000000000000000, owned: 0, tier: 26 },
+            { id: 51, name: "Eternal Flame", cost: 25000000000000000000000000000000000, pps: 110000000000000000000000000000000000000, owned: 0, tier: 26 },
+            { id: 52, name: "Cosmic Apex", cost: 100000000000000000000000000000000000, pps: 650000000000000000000000000000000000000, owned: 0, tier: 27 },
+            { id: 53, name: "Grand Unification", cost: 500000000000000000000000000000000000, pps: 4000000000000000000000000000000000000000, owned: 0, tier: 27 },
+            { id: 54, name: "Pure Energy", cost: 2500000000000000000000000000000000000, pps: 24000000000000000000000000000000000000000, owned: 0, tier: 28 },
+            { id: 55, name: "The Everything", cost: 10000000000000000000000000000000000000, pps: 150000000000000000000000000000000000000000, owned: 0, tier: 28 },
+            { id: 56, name: "Celestial Architect", cost: 50000000000000000000000000000000000000, pps: 900000000000000000000000000000000000000000, owned: 0, tier: 29 },
+            { id: 57, name: "Dimensional Weaver", cost: 250000000000000000000000000000000000000, pps: 5500000000000000000000000000000000000000000, owned: 0, tier: 29 },
+            { id: 58, name: "Infinity Incarnate", cost: 1000000000000000000000000000000000000000, pps: 33000000000000000000000000000000000000000000, owned: 0, tier: 30 },
+            { id: 59, name: "Cosmic Singularity", cost: 5000000000000000000000000000000000000000, pps: 200000000000000000000000000000000000000000000, owned: 0, tier: 30 },
+            { id: 60, name: "Temporal Sovereign", cost: 25000000000000000000000000000000000000000, pps: 1200000000000000000000000000000000000000000000, owned: 0, tier: 31 },
+            { id: 61, name: "Void Emperor", cost: 100000000000000000000000000000000000000000, pps: 7000000000000000000000000000000000000000000000, owned: 0, tier: 31 },
+            { id: 62, name: "Reality Architect", cost: 500000000000000000000000000000000000000000, pps: 42000000000000000000000000000000000000000000000, owned: 0, tier: 32 },
+            { id: 63, name: "Quantum Deity", cost: 2500000000000000000000000000000000000000000, pps: 260000000000000000000000000000000000000000000000, owned: 0, tier: 32 },
+            { id: 64, name: "Omniversal Core", cost: 10000000000000000000000000000000000000000000, pps: 1500000000000000000000000000000000000000000000000, owned: 0, tier: 33 },
+            { id: 65, name: "Eternal Witness", cost: 50000000000000000000000000000000000000000000, pps: 9000000000000000000000000000000000000000000000000, owned: 0, tier: 33 },
+            { id: 66, name: "Primordial Chaos", cost: 250000000000000000000000000000000000000000000, pps: 55000000000000000000000000000000000000000000000000, owned: 0, tier: 34 },
+            { id: 67, name: "Universal Consciousness", cost: 1000000000000000000000000000000000000000000000, pps: 330000000000000000000000000000000000000000000000000, owned: 0, tier: 34 },
+            { id: 68, name: "Infinite Recursion", cost: 5000000000000000000000000000000000000000000000, pps: 2000000000000000000000000000000000000000000000000000, owned: 0, tier: 35 },
+            { id: 69, name: "Cosmic Oversoul", cost: 25000000000000000000000000000000000000000000000, pps: 12000000000000000000000000000000000000000000000000000, owned: 0, tier: 35 },
+            { id: 70, name: "Boundless Entity", cost: 100000000000000000000000000000000000000000000000, pps: 70000000000000000000000000000000000000000000000000000, owned: 0, tier: 36 },
+            { id: 71, name: "Metaversal Nexus", cost: 500000000000000000000000000000000000000000000000, pps: 420000000000000000000000000000000000000000000000000000, owned: 0, tier: 36 },
+            { id: 72, name: "Dimensional Master", cost: 2500000000000000000000000000000000000000000000000, pps: 2600000000000000000000000000000000000000000000000000000, owned: 0, tier: 37 },
+            { id: 73, name: "Existence Weaver", cost: 10000000000000000000000000000000000000000000000000, pps: 15000000000000000000000000000000000000000000000000000000, owned: 0, tier: 37 },
+            { id: 74, name: "Absolute Infinity", cost: 50000000000000000000000000000000000000000000000000, pps: 90000000000000000000000000000000000000000000000000000000, owned: 0, tier: 38 },
+            { id: 75, name: "Supreme Architect", cost: 250000000000000000000000000000000000000000000000000, pps: 550000000000000000000000000000000000000000000000000000000, owned: 0, tier: 38 },
+            { id: 76, name: "Omniscient Mind", cost: 1000000000000000000000000000000000000000000000000000, pps: 3300000000000000000000000000000000000000000000000000000000, owned: 0, tier: 39 },
+            { id: 77, name: "Perfect Unity", cost: 5000000000000000000000000000000000000000000000000000, pps: 20000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 39 },
+            { id: 78, name: "Transcendent One", cost: 25000000000000000000000000000000000000000000000000000, pps: 120000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 40 },
+            { id: 79, name: "Ultimate Existence", cost: 100000000000000000000000000000000000000000000000000000, pps: 700000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 40 },
+            { id: 80, name: "The Infinite", cost: 500000000000000000000000000000000000000000000000000000, pps: 4500000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 41 },
+            { id: 81, name: "Eternal Matrix", cost: 2500000000000000000000000000000000000000000000000000000, pps: 27000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 42 },
+            { id: 82, name: "Dimensional Lord", cost: 10000000000000000000000000000000000000000000000000000000, pps: 160000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 42 },
+            { id: 83, name: "Cosmic Emperor", cost: 50000000000000000000000000000000000000000000000000000000, pps: 1000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 43 },
+            { id: 84, name: "Nexus Prime", cost: 250000000000000000000000000000000000000000000000000000000, pps: 6000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 43 },
+            { id: 85, name: "Infinity Weaver", cost: 1000000000000000000000000000000000000000000000000000000000, pps: 36000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 44 },
+            { id: 86, name: "Reality Engine", cost: 5000000000000000000000000000000000000000000000000000000000, pps: 220000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 44 },
+            { id: 87, name: "Void Sovereign", cost: 25000000000000000000000000000000000000000000000000000000000, pps: 1300000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 45 },
+            { id: 88, name: "Universal Forge", cost: 100000000000000000000000000000000000000000000000000000000000, pps: 8000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 45 },
+            { id: 89, name: "Quantum God", cost: 500000000000000000000000000000000000000000000000000000000000, pps: 48000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 46 },
+            { id: 90, name: "Eternity Core", cost: 2500000000000000000000000000000000000000000000000000000000000, pps: 290000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 46 },
+            { id: 91, name: "Supreme Unity", cost: 10000000000000000000000000000000000000000000000000000000000000, pps: 1700000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 47 },
+            { id: 92, name: "Omniversal Mind", cost: 50000000000000000000000000000000000000000000000000000000000000, pps: 10000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 47 },
+            { id: 93, name: "Celestial Throne", cost: 250000000000000000000000000000000000000000000000000000000000000, pps: 62000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 48 },
+            { id: 94, name: "Boundless Realm", cost: 1000000000000000000000000000000000000000000000000000000000000000, pps: 370000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 48 },
+            { id: 95, name: "Infinite Spiral", cost: 5000000000000000000000000000000000000000000000000000000000000000, pps: 2200000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 49 },
+            { id: 96, name: "Primordial Force", cost: 25000000000000000000000000000000000000000000000000000000000000000, pps: 13000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 49 },
+            { id: 97, name: "Cosmic Zenith", cost: 100000000000000000000000000000000000000000000000000000000000000000, pps: 80000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 50 },
+            { id: 98, name: "Absolute Power", cost: 500000000000000000000000000000000000000000000000000000000000000000, pps: 480000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 50 },
+            { id: 99, name: "Divine Nexus", cost: 2500000000000000000000000000000000000000000000000000000000000000000, pps: 2900000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 51 },
+            { id: 100, name: "Ultimate Reality", cost: 10000000000000000000000000000000000000000000000000000000000000000000, pps: 17000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 51 },
+            { id: 101, name: "Singularity Core", cost: 50000000000000000000000000000000000000000000000000000000000000000000, pps: 100000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 52 },
+            { id: 102, name: "Transcendent Sphere", cost: 250000000000000000000000000000000000000000000000000000000000000000000, pps: 620000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 52 },
+            { id: 103, name: "Eternal Flame", cost: 1000000000000000000000000000000000000000000000000000000000000000000000, pps: 3700000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 53 },
+            { id: 104, name: "Omnipresent Force", cost: 5000000000000000000000000000000000000000000000000000000000000000000000, pps: 22000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 53 },
+            { id: 105, name: "Cosmic Consciousness", cost: 25000000000000000000000000000000000000000000000000000000000000000000000, pps: 130000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 54 },
+            { id: 106, name: "Hyperdimensional Being", cost: 100000000000000000000000000000000000000000000000000000000000000000000000, pps: 800000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 54 },
+            { id: 107, name: "Multiversal Throne", cost: 500000000000000000000000000000000000000000000000000000000000000000000000, pps: 4800000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 55 },
+            { id: 108, name: "Infinite Observer", cost: 2500000000000000000000000000000000000000000000000000000000000000000000000, pps: 29000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 55 },
+            { id: 109, name: "Reality Weaver", cost: 10000000000000000000000000000000000000000000000000000000000000000000000000, pps: 170000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 56 },
+            { id: 110, name: "Omniscient Entity", cost: 50000000000000000000000000000000000000000000000000000000000000000000000000, pps: 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 56 },
+            { id: 111, name: "Supreme Oversoul", cost: 250000000000000000000000000000000000000000000000000000000000000000000000000, pps: 6200000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 57 },
+            { id: 112, name: "Dimensional Apex", cost: 1000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 37000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 57 },
+            { id: 113, name: "Eternal Sovereign", cost: 5000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 220000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 58 },
+            { id: 114, name: "Cosmic Apotheosis", cost: 25000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 1300000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 58 },
+            { id: 115, name: "Ultimate Transcendence", cost: 100000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 59 },
+            { id: 116, name: "Perfect Infinity", cost: 500000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 48000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 59 },
+            { id: 117, name: "Boundless Power", cost: 2500000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 290000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 60 },
+            { id: 118, name: "Absolute Existence", cost: 10000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 1700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 60 },
+            { id: 119, name: "The Eternal", cost: 50000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 61 },
+            { id: 120, name: "Prime Creator", cost: 250000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 62000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 61 },
+            { id: 121, name: "Nexus of Creation", cost: 1000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 370000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 62 },
+            { id: 122, name: "Supreme Architect", cost: 5000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 2200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 62 },
+            { id: 123, name: "Universal Constant", cost: 25000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 13000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 63 },
+            { id: 124, name: "Divine Singularity", cost: 100000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 63 },
+            { id: 125, name: "Omniversal Crown", cost: 500000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 480000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 64 },
+            { id: 126, name: "Infinite Ascension", cost: 2500000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 2900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 64 },
+            { id: 127, name: "The Omnipotent", cost: 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 17000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 65 },
+            { id: 128, name: "Perfect Unity", cost: 50000000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 65 },
+            { id: 129, name: "The Alpha Omega", cost: 250000000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 620000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 66 },
+            { id: 130, name: "Beyond All", cost: 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, pps: 3700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, owned: 0, tier: 66 }
+        ];
+
+        // Calculate total points per second
+        function calculatePPS() {
+            return upgrades.reduce((total, upgrade) => total + (upgrade.owned * upgrade.pps), 0) * ascensionMultiplier;
+        }
+
+        // Update points based on time elapsed
+        function updatePoints() {
+            const now = Date.now();
+            const elapsed = (now - lastUpdate) / 1000;
+            const pps = calculatePPS();
+            const pointsGained = pps * elapsed;
+            points += pointsGained;
+            totalPointsEarned += pointsGained;
+            lastUpdate = now;
+        }
+
+        // Format multiplier with K/M/B/T/Qa/Qi notation
+        function formatMultiplier(num) {
+            if (num >= 1e15) return (num / 1e15).toFixed(2) + 'Qi';
+            if (num >= 1e12) return (num / 1e12).toFixed(2) + 'Qa';
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+            return num.toFixed(2);
+        }
+
+        // Format multiplier with K/M/B/T/Qa/Qi notation
+        function formatMultiplier(num) {
+            if (num >= 1e15) return (num / 1e15).toFixed(2) + 'Qi';
+            if (num >= 1e12) return (num / 1e12).toFixed(2) + 'Qa';
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+            return num.toFixed(2);
+        }
+
+        // Format large numbers
+        function formatNumber(num) {
+            // Handle Infinity
+            if (!isFinite(num)) return 'INFINITE';
+            if (num >= 1e300) return 'MAX';
+            
+            // Extended notation for ultra-large numbers
+            if (num >= 1e100) return (num / 1e100).toFixed(2) + 'Gg';  // Googol
+            if (num >= 1e93) return (num / 1e93).toFixed(2) + 'UVg';  // Unvigintillion
+            if (num >= 1e90) return (num / 1e90).toFixed(2) + 'NVg';  // Novemvigintillion
+            if (num >= 1e87) return (num / 1e87).toFixed(2) + 'OVg';  // Octovigintillion
+            if (num >= 1e84) return (num / 1e84).toFixed(2) + 'SVg';  // Septenvigintillion
+            if (num >= 1e81) return (num / 1e81).toFixed(2) + 'SxVg'; // Sexvigintillion
+            if (num >= 1e78) return (num / 1e78).toFixed(2) + 'QiVg'; // Quinvigintillion
+            if (num >= 1e75) return (num / 1e75).toFixed(2) + 'QaVg'; // Quattuorvigintillion
+            if (num >= 1e72) return (num / 1e72).toFixed(2) + 'TrVg'; // Tresvigintillion
+            if (num >= 1e69) return (num / 1e69).toFixed(2) + 'DuVg'; // Duovigintillion
+            if (num >= 1e66) return (num / 1e66).toFixed(2) + 'UnVg'; // Unvigintillion
+            if (num >= 1e63) return (num / 1e63).toFixed(2) + 'Vg';   // Vigintillion
+            if (num >= 1e60) return (num / 1e60).toFixed(2) + 'Nd';   // Novemdecillion
+            if (num >= 1e57) return (num / 1e57).toFixed(2) + 'Od';   // Octodecillion
+            if (num >= 1e54) return (num / 1e54).toFixed(2) + 'Sd';   // Septendecillion
+            if (num >= 1e51) return (num / 1e51).toFixed(2) + 'Sxd';  // Sexdecillion
+            if (num >= 1e48) return (num / 1e48).toFixed(2) + 'Qd';   // Quindecillion
+            if (num >= 1e45) return (num / 1e45).toFixed(2) + 'Qt';   // Quattordecillion
+            if (num >= 1e42) return (num / 1e42).toFixed(2) + 'Td';   // Tredecillion
+            if (num >= 1e39) return (num / 1e39).toFixed(2) + 'Du';   // Duodecillion
+            if (num >= 1e36) return (num / 1e36).toFixed(2) + 'Un';   // Undecillion
+            if (num >= 1e33) return (num / 1e33).toFixed(2) + 'De';   // Decillion
+            if (num >= 1e30) return (num / 1e30).toFixed(2) + 'No';   // Nonillion
+            if (num >= 1e27) return (num / 1e27).toFixed(2) + 'Oc';   // Octillion
+            if (num >= 1e24) return (num / 1e24).toFixed(2) + 'Sp';   // Septillion
+            if (num >= 1e21) return (num / 1e21).toFixed(2) + 'Sx';   // Sextillion
+            if (num >= 1e18) return (num / 1e18).toFixed(2) + 'Qi';   // Quintillion
+            if (num >= 1e15) return (num / 1e15).toFixed(2) + 'Qa';   // Quadrillion
+            if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';    // Trillion
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';      // Billion
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';      // Million
+            if (num >= 1000) return (num / 1000).toFixed(2) + 'K';    // Thousand
+            return num.toFixed(2);
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                message.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => message.remove(), 300);
+            }, 2000);
+        }
+
+        // Purchase upgrade
+        function buyUpgrade(upgradeId) {
+            const upgrade = upgrades.find(u => u.id === upgradeId);
+            
+            if (points >= upgrade.cost) {
+                points -= upgrade.cost;
+                upgrade.owned++;
+                totalUpgradesPurchased++;
+                showMessage(`✓ Purchased ${upgrade.name}!`, 'success');
+                updateDisplay();
+                checkAchievements();
+            } else {
+                showMessage(`✗ Not enough points! Need ${formatNumber(upgrade.cost)}`, 'error');
+            }
+        }
+
+        // Perform boost/ascension
+        function performBoost() {
+            const beyondAll = upgrades.find(u => u.id === 130);
+            
+            if (beyondAll.owned < 1) {
+                showMessage(`✗ Need 1 Beyond All! You have ${beyondAll.owned}`, 'error');
+                return;
+            }
+            
+            const boostsToAdd = ultrajumpCount + 1;
+            const ultrajumpMessage = ultrajumpCount > 0 ? `\n\nBOOST MODE: You will gain ${boostsToAdd} boosts!` : '';
+            
+            if (confirm(`BOOST CONFIRMATION\n\nCurrent Multiplier: ${ascensionMultiplier}x\nNew Multiplier: ${ascensionMultiplier * Math.pow(2, boostsToAdd)}x${ultrajumpMessage}\n\nThis will reset ALL your points and upgrades!\nBut your multiplier will increase by ${Math.pow(2, boostsToAdd)}x!\n\nAre you sure?`)) {
+                // Add boosts (each boost doubles the multiplier)
+                boostCount += boostsToAdd;
+                totalBoostsPerformed += boostsToAdd;
+                ascensionMultiplier *= Math.pow(2, boostsToAdd);
+                
+                // Reset points
+                points = 10;
+                lastUpdate = Date.now();
+                
+                // Reset all upgrades
+                upgrades.forEach(upgrade => upgrade.owned = 0);
+                
+                showMessage(`🎉 BOOST COMPLETE! Multiplier: ${ascensionMultiplier}x | Boosts: +${boostsToAdd}`, 'success');
+                renderUpgrades();
+                updateDisplay();
+                checkAchievements();
+            }
+        }
+
+        // Perform ultrajump
+        function performUltrajump() {
+            if (boostCount < 5) {
+                showMessage(`✗ Need 5 boosts! You have ${boostCount}`, 'error');
+                return;
+            }
+            
+            const ultrajumpsToGain = kangarooLeapCount + 1;
+            const boostModes = ["DOUBLE", "TRIPLE", "QUADRUPLE", "QUINTUPLE", "SEXTUPLE", "SEPTUPLE", "OCTUPLE", "NONUPLE", "DECUPLE"];
+            const currentMode = ultrajumpCount < boostModes.length ? boostModes[ultrajumpCount] : `${ultrajumpCount + 1}X`;
+            const nextLevel = ultrajumpCount + ultrajumpsToGain;
+            const nextMode = nextLevel < boostModes.length ? boostModes[nextLevel] : `${nextLevel + 1}X`;
+            
+            const kangarooMessage = kangarooLeapCount > 0 ? `\n\nKANGAROO LEAP ACTIVE: Gaining ${ultrajumpsToGain} ultrajumps!` : '';
+            
+            if (confirm(`ULTRAJUMP ACTIVATION\n\nUltrajump Level: ${ultrajumpCount} → ${nextLevel}${kangarooMessage}\nCurrent Boosts: ${boostCount}\nCost: 3 boosts (you'll have ${boostCount - 3})\n\nCurrent Multiplier: ${ascensionMultiplier}x\nNew Multiplier: ${(ascensionMultiplier / Math.pow(2, 3)) * 3}x\n\nBoost Mode: ${currentMode} → ${nextMode}\nFuture boosts will give ${nextLevel + 1} boosts each!\n\nPERMANENT EFFECTS:\n- Lose 3 boosts (÷8 multiplier)\n- Then TRIPLE multiplier!\n- Net effect: ×${3/8} multiplier\n- Boost multiplier increases to ${nextLevel + 1}x!\n\nActivate ULTRAJUMP?`)) {
+                // Remove 3 boosts and adjust multiplier
+                boostCount -= 3;
+                ascensionMultiplier /= Math.pow(2, 3);  // Lose the multiplier from those 3 boosts
+                
+                // Triple the multiplier
+                ascensionMultiplier *= 3;
+                
+                // Add ultrajumps (multiple if kangaroo leap active)
+                ultrajumpCount += ultrajumpsToGain;
+                totalUltrajumpsPerformed += ultrajumpsToGain;
+                
+                showMessage(`🚀 ULTRAJUMP! +${ultrajumpsToGain} Ultrajumps | Multiplier: ${ascensionMultiplier}x | Total: ${ultrajumpCount}`, 'success');
+                updateDisplay();
+                checkAchievements();
+            }
+        }
+
+        // Perform kangaroo leap
+        function performKangarooLeap() {
+            if (boostCount < 15) {
+                showMessage(`✗ Need 15 boosts! You have ${boostCount}`, 'error');
+                return;
+            }
+            
+            const kangarooLeapsToGain = skyElevatorCount + 1;
+            const newUltrajumpMultiplier = kangarooLeapCount + kangarooLeapsToGain + 1;
+            const skyMessage = skyElevatorCount > 0 ? `\n\nSKY ELEVATOR ACTIVE: Gaining ${kangarooLeapsToGain} kangaroo leaps!` : '';
+            
+            if (confirm(`KANGAROO LEAP ACTIVATION\n\nKangaroo Leap Level: ${kangarooLeapCount} → ${kangarooLeapCount + kangarooLeapsToGain}${skyMessage}\n\nCurrent Boosts: ${boostCount} (ALL will be removed)\nCurrent Ultrajumps: ${ultrajumpCount} (ALL will be removed)\n\nCurrent Multiplier: ${ascensionMultiplier}x\nNew Multiplier: ${(ascensionMultiplier / Math.pow(2, boostCount)) * 4}x\n\nUltrajump Multiplier: ${kangarooLeapCount + 1}x → ${newUltrajumpMultiplier}x\nFuture ultrajumps will grant ${newUltrajumpMultiplier} ultrajumps each!\n\nPERMANENT EFFECTS:\n- Lose ALL ${boostCount} boosts (÷${Math.pow(2, boostCount)} multiplier)\n- Then QUADRUPLE multiplier!\n- Net effect: ×${4 / Math.pow(2, boostCount)} multiplier\n- ALL ultrajumps will be REMOVED!\n- Each ultrajump grants ${newUltrajumpMultiplier} ultrajumps!\n\nActivate KANGAROO LEAP?`)) {
+                // Remove all boosts and ultrajumps (and adjust multiplier for lost boosts)
+                ascensionMultiplier /= Math.pow(2, boostCount);  // Lose the multiplier from all boosts
+                boostCount = 0;
+                ultrajumpCount = 0;
+                
+                // Quadruple the multiplier
+                ascensionMultiplier *= 4;
+                
+                // Add kangaroo leaps (multiple if sky elevator active)
+                kangarooLeapCount += kangarooLeapsToGain;
+                
+                showMessage(`🦘 KANGAROO LEAP! +${kangarooLeapsToGain} Kangaroo Leaps | Multiplier: ${ascensionMultiplier}x | Total: ${kangarooLeapCount}`, 'success');
+                updateDisplay();
+                checkAchievements();
+            }
+        }
+
+        // Perform sky elevator
+        function performSkyElevator() {
+            if (boostCount < 40) {
+                showMessage(`✗ Need 40 boosts! You have ${boostCount}`, 'error');
+                return;
+            }
+            
+            if (ultrajumpCount < 3) {
+                showMessage(`✗ Need at least 3 ultrajumps! You have ${ultrajumpCount}`, 'error');
+                return;
+            }
+            
+            const skyElevatorsToGain = spacejumpCount + 1;
+            const newKangarooMultiplier = skyElevatorCount + skyElevatorsToGain + 1;
+            const spacejumpMessage = spacejumpCount > 0 ? `\n\nSPACEJUMP ACTIVE: Gaining ${skyElevatorsToGain} sky elevators!` : '';
+            
+            if (confirm(`SKY ELEVATOR ACTIVATION\n\nSky Elevator Level: ${skyElevatorCount} → ${skyElevatorCount + skyElevatorsToGain}${spacejumpMessage}\n\nCurrent Boosts: ${boostCount} (ALL will be removed)\nCurrent Kangaroo Leaps: ${kangarooLeapCount} (ALL will be removed)\nCurrent Ultrajumps: ${ultrajumpCount} (3 will be removed)\n\nCurrent Multiplier: ${ascensionMultiplier}x\nNew Multiplier: ${(ascensionMultiplier / Math.pow(2, boostCount)) * 4}x\n\nKangaroo Leap Multiplier: ${skyElevatorCount + 1}x → ${newKangarooMultiplier}x\nFuture kangaroo leaps will grant ${newKangarooMultiplier} kangaroo leaps each!\n\nPERMANENT EFFECTS:\n- Lose ALL ${boostCount} boosts (÷${Math.pow(2, boostCount)} multiplier)\n- Then QUADRUPLE multiplier!\n- Net effect: ×${4 / Math.pow(2, boostCount)} multiplier\n- ALL kangaroo leaps will be REMOVED!\n- 3 ultrajumps will be REMOVED!\n- Each kangaroo leap grants ${newKangarooMultiplier} kangaroo leaps!\n\nActivate SKY ELEVATOR?`)) {
+                // Remove all boosts and kangaroo leaps, remove 3 ultrajumps (and adjust multiplier for lost boosts)
+                ascensionMultiplier /= Math.pow(2, boostCount);  // Lose the multiplier from all boosts
+                boostCount = 0;
+                kangarooLeapCount = 0;
+                ultrajumpCount -= 3;
+                
+                // Quadruple the multiplier
+                ascensionMultiplier *= 4;
+                
+                // Add sky elevators (multiple if spacejump active)
+                skyElevatorCount += skyElevatorsToGain;
+                
+                showMessage(`🏢 SKY ELEVATOR! +${skyElevatorsToGain} Sky Elevators | Multiplier: ${ascensionMultiplier}x | Total: ${skyElevatorCount}`, 'success');
+                updateDisplay();
+                checkAchievements();
+            }
+        }
+
+        // Perform spacejump
+        function performSpacejump() {
+            if (boostCount < 100) {
+                showMessage(`✗ Need 100 boosts! You have ${boostCount}`, 'error');
+                return;
+            }
+            
+            const newSkyElevatorMultiplier = spacejumpCount + 2;
+            
+            if (confirm(`SPACEJUMP ACTIVATION\n\nSpacejump Level: ${spacejumpCount} → ${spacejumpCount + 1}\n\nCurrent Boosts: ${boostCount} (ALL will be removed)\nCurrent Ultrajumps: ${ultrajumpCount} (ALL will be removed)\nCurrent Kangaroo Leaps: ${kangarooLeapCount} (ALL will be removed)\nCurrent Sky Elevators: ${skyElevatorCount} (ALL will be removed)\n\nCurrent Multiplier: ${ascensionMultiplier}x\nNew Multiplier: ${(ascensionMultiplier / Math.pow(2, boostCount)) * 5}x\n\nSky Elevator Multiplier: ${spacejumpCount + 1}x → ${newSkyElevatorMultiplier}x\nFuture sky elevators will grant ${newSkyElevatorMultiplier} sky elevators each!\n\nPERMANENT EFFECTS:\n- Lose ALL ${boostCount} boosts (÷${Math.pow(2, boostCount)} multiplier)\n- Then QUINTUPLE multiplier!\n- Net effect: ×${5 / Math.pow(2, boostCount)} multiplier\n- ALL ultrajumps, kangaroo leaps, and sky elevators will be REMOVED!\n- Each sky elevator grants ${newSkyElevatorMultiplier} sky elevators!\n\nActivate SPACEJUMP?`)) {
+                // Remove all boosts, ultrajumps, kangaroo leaps, and sky elevators (and adjust multiplier for lost boosts)
+                ascensionMultiplier /= Math.pow(2, boostCount);  // Lose the multiplier from all boosts
+                boostCount = 0;
+                ultrajumpCount = 0;
+                kangarooLeapCount = 0;
+                skyElevatorCount = 0;
+                
+                // Quintuple the multiplier
+                ascensionMultiplier *= 5;
+                
+                // Add spacejump
+                spacejumpCount += 1;
+                
+                showMessage(`🚀 SPACEJUMP ${spacejumpCount} ACTIVATED! Multiplier: ${ascensionMultiplier}x | ${newSkyElevatorMultiplier}x Sky Elevators!`, 'success');
+                updateDisplay();
+                checkAchievements();
+            }
+        }
+
+        // Check and unlock achievements
+        function checkAchievements() {
+            achievements.forEach(achievement => {
+                if (!unlockedAchievements.has(achievement.id) && achievement.check()) {
+                    unlockedAchievements.add(achievement.id);
+                    showAchievementNotification(achievement);
+                }
+            });
+            updateAchievementDisplay();
+        }
+
+        // Show achievement notification
+        function showAchievementNotification(achievement) {
+            const notification = document.createElement('div');
+            notification.className = 'achievement-notification';
+            notification.innerHTML = `
+                <h3>${achievement.icon} Achievement Unlocked!</h3>
+                <p><strong>${achievement.name}</strong></p>
+                <p>${achievement.description}</p>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        // Update achievement counter
+        function updateAchievementDisplay() {
+            const unlocked = unlockedAchievements.size;
+            const total = achievements.length;
+            document.getElementById('achievement-count').textContent = unlocked;
+            document.getElementById('total-achievements').textContent = total;
+            document.getElementById('modal-achievement-count').textContent = unlocked;
+            document.getElementById('modal-total-achievements').textContent = total;
+            document.getElementById('achievement-percentage').textContent = Math.round((unlocked / total) * 100);
+        }
+
+        // Open achievements modal
+        function openAchievements() {
+            renderAchievements();
+            document.getElementById('achievements-modal').style.display = 'block';
+        }
+
+        // Close achievements modal
+        function closeAchievements() {
+            document.getElementById('achievements-modal').style.display = 'none';
+        }
+
+        // Render achievements
+        function renderAchievements() {
+            const container = document.getElementById('achievements-container');
+            const categories = {
+                easy: achievements.filter(a => a.difficulty === 'easy'),
+                medium: achievements.filter(a => a.difficulty === 'medium'),
+                hard: achievements.filter(a => a.difficulty === 'hard'),
+                challenging: achievements.filter(a => a.difficulty === 'challenging'),
+                extreme: achievements.filter(a => a.difficulty === 'extreme')
+            };
+
+            const categoryNames = {
+                easy: 'Easy',
+                medium: 'Medium',
+                hard: 'Hard',
+                challenging: 'Challenging',
+                extreme: 'Extreme'
+            };
+
+            container.innerHTML = Object.keys(categories).map(difficulty => {
+                const categoryAchievements = categories[difficulty];
+                const unlockedCount = categoryAchievements.filter(a => unlockedAchievements.has(a.id)).length;
+                
+                return `
+                    <div class="achievement-category">
+                        <div class="category-header ${difficulty}">
+                            ${categoryNames[difficulty]} (${unlockedCount}/${categoryAchievements.length})
+                        </div>
+                        <div class="achievements-grid">
+                            ${categoryAchievements.map(achievement => {
+                                const unlocked = unlockedAchievements.has(achievement.id);
+                                const progress = unlocked ? '✅ UNLOCKED' : '🔒 Locked';
+                                return `
+                                    <div class="achievement-card ${unlocked ? 'unlocked' : ''}">
+                                        <div class="achievement-icon">${achievement.icon}</div>
+                                        <div class="achievement-name">${achievement.name}</div>
+                                        <div class="achievement-description">${achievement.description}</div>
+                                        <div class="achievement-progress">${progress}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render upgrades
+        function renderUpgrades() {
+            const container = document.getElementById('upgrades');
+            container.innerHTML = upgrades.map(upgrade => `
+                <div class="upgrade-card">
+                    <div class="upgrade-header">
+                        <div>
+                            <span class="upgrade-name">${upgrade.name}</span>
+                            <span class="tier-label tier-${upgrade.tier}">Tier ${upgrade.tier}</span>
+                        </div>
+                        ${upgrade.owned > 0 ? `<span class="upgrade-owned">×${upgrade.owned}</span>` : ''}
+                    </div>
+                    <div class="upgrade-info">
+                        <div>
+                            <span>Cost:</span>
+                            <span class="upgrade-cost">${formatNumber(upgrade.cost)} points</span>
+                        </div>
+                        <div>
+                            <span>Generates:</span>
+                            <span class="upgrade-pps">+${formatNumber(upgrade.pps)} pts/sec</span>
+                        </div>
+                        ${upgrade.owned > 0 ? `
+                        <div>
+                            <span>Total Output:</span>
+                            <span class="upgrade-pps">+${formatNumber(upgrade.owned * upgrade.pps)} pts/sec</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <button 
+                        class="buy-button" 
+                        onclick="buyUpgrade(${upgrade.id})"
+                        id="btn-${upgrade.id}"
+                    >
+                        BUY FOR ${formatNumber(upgrade.cost)}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Update display
+        function updateDisplay() {
+            updatePoints();
+            
+            // Update stats
+            document.getElementById('points').textContent = formatNumber(points);
+            document.getElementById('pps').textContent = formatNumber(calculatePPS());
+            document.getElementById('multiplier').textContent = formatMultiplier(ascensionMultiplier) + 'x';
+            document.getElementById('boost-count').textContent = boostCount;
+            document.getElementById('ultrajump-count').textContent = ultrajumpCount;
+            document.getElementById('kangaroo-count').textContent = kangarooLeapCount;
+            document.getElementById('sky-count').textContent = skyElevatorCount;
+            document.getElementById('spacejump-count').textContent = spacejumpCount;
+
+            // Check boost eligibility
+            const beyondAll = upgrades.find(u => u.id === 130);
+            const boostContainer = document.getElementById('boost-container');
+            if (beyondAll.owned >= 1) {
+                boostContainer.style.display = 'block';
+            } else {
+                boostContainer.style.display = 'none';
+            }
+            
+            // Check ultrajump eligibility (always show if 5+ boosts)
+            const ultrajumpContainer = document.getElementById('ultrajump-container');
+            const ultrajumpStatus = document.getElementById('ultrajump-status');
+            if (boostCount >= 5) {
+                ultrajumpContainer.style.display = 'block';
+            } else {
+                ultrajumpContainer.style.display = 'none';
+            }
+            
+            // Check kangaroo leap eligibility (15+ boosts)
+            const kangarooContainer = document.getElementById('kangaroo-container');
+            const kangarooStatus = document.getElementById('kangaroo-status');
+            if (boostCount >= 15) {
+                kangarooContainer.style.display = 'block';
+            } else {
+                kangarooContainer.style.display = 'none';
+            }
+            
+            // Check sky elevator eligibility (40+ boosts and 3+ ultrajumps)
+            const skyContainer = document.getElementById('sky-container');
+            const skyStatus = document.getElementById('sky-status');
+            if (boostCount >= 40 && ultrajumpCount >= 3) {
+                skyContainer.style.display = 'block';
+            } else {
+                skyContainer.style.display = 'none';
+            }
+            
+            // Check spacejump eligibility (100+ boosts)
+            const spacejumpContainer = document.getElementById('spacejump-container');
+            const spacejumpStatus = document.getElementById('spacejump-status');
+            if (boostCount >= 100) {
+                spacejumpContainer.style.display = 'block';
+            } else {
+                spacejumpContainer.style.display = 'none';
+            }
+            
+            // Update ultrajump status display
+            if (ultrajumpCount > 0) {
+                const boostModes = ["DOUBLE", "TRIPLE", "QUADRUPLE", "QUINTUPLE", "SEXTUPLE", "SEPTUPLE", "OCTUPLE", "NONUPLE", "DECUPLE"];
+                const modeName = ultrajumpCount < boostModes.length ? boostModes[ultrajumpCount] : `${ultrajumpCount + 1}X`;
+                ultrajumpStatus.textContent = `⚡ ${modeName} BOOST MODE - ${ultrajumpCount + 1}x Boosts Per Boost! (Ultrajump Level ${ultrajumpCount}) ⚡`;
+                ultrajumpStatus.style.display = 'block';
+            } else {
+                ultrajumpStatus.style.display = 'none';
+            }
+            
+            // Update kangaroo leap status display
+            if (kangarooLeapCount > 0) {
+                kangarooStatus.textContent = `🦘 KANGAROO LEAP ACTIVE - ${kangarooLeapCount + 1}x Ultrajumps Per Ultrajump! (Level ${kangarooLeapCount}) 🦘`;
+                kangarooStatus.style.display = 'block';
+            } else {
+                kangarooStatus.style.display = 'none';
+            }
+            
+            // Update sky elevator status display
+            if (skyElevatorCount > 0) {
+                skyStatus.textContent = `🏢 SKY ELEVATOR ACTIVE - ${skyElevatorCount + 1}x Kangaroo Leaps Per Kangaroo Leap! (Level ${skyElevatorCount}) 🏢`;
+                skyStatus.style.display = 'block';
+            } else {
+                skyStatus.style.display = 'none';
+            }
+            
+            // Update spacejump status display
+            if (spacejumpCount > 0) {
+                spacejumpStatus.textContent = `🚀 SPACEJUMP ACTIVE - ${spacejumpCount + 1}x Sky Elevators Per Sky Elevator! (Level ${spacejumpCount}) 🚀`;
+                spacejumpStatus.style.display = 'block';
+            } else {
+                spacejumpStatus.style.display = 'none';
+            }
+
+            // Update button states
+            upgrades.forEach(upgrade => {
+                const button = document.getElementById(`btn-${upgrade.id}`);
+                if (button) {
+                    button.disabled = points < upgrade.cost;
+                }
+            });
+        }
+
+        // Game loop
+        function gameLoop() {
+            updateDisplay();
+            checkAchievements();
+        }
+
+        // Initialize
+        renderUpgrades();
+        updateAchievementDisplay();
+        setInterval(gameLoop, 50); // Update 20 times per second for smooth display
+
+        // Initial display
+        updateDisplay();
+        checkAchievements();
+    </script>
+</body>
+</html>
